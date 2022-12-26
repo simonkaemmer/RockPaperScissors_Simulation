@@ -1,6 +1,6 @@
-from src.RPSObject import RPSCircle, Window, RPSType, kill_dead_sprites
+from src.RPSObject import RPSCircle, Window, RPSType, find_collisions, reflectBalls, window_collisions
 import pygame
-import time
+import itertools
 import ctypes
 import random
 
@@ -13,15 +13,18 @@ def go():
     clock = pygame.time.Clock()
 
     all_groups = pygame.sprite.Group()
-    stone = RPSCircle(RPSType.Stone, (250, 250), 5, (random.random(), random.random()), "./img/Stein.png")
-    scissor = RPSCircle(RPSType.Scissors, (699, 699), 5, (random.random(), random.random()), "./img/Schere.png")
-    paper = RPSCircle(RPSType.Paper, (101, 699), 5, (random.random(), random.random()), "./img/Papier.png")
 
-    paper2 = RPSCircle(RPSType.Paper, (101, 699), 5, (random.random(), random.random()), "./img/Papier.png")
-    paper3 = RPSCircle(RPSType.Paper, (101, 699), 5, (random.random(), random.random()), "./img/Papier.png")
-    paper4 = RPSCircle(RPSType.Paper, (101, 699), 5, (random.random(), random.random()), "./img/Papier.png")
+    stone = RPSCircle(RPSType.Stone, (250, 250), 5, (random.random(), random.random()))
+    stone2 = RPSCircle(RPSType.Stone, (350, 350), 5, (random.random(), random.random()))
+    scissor = RPSCircle(RPSType.Scissors, (699, 699), 5, (random.random(), random.random()))
+    scissor2 = RPSCircle(RPSType.Scissors, (599, 599), 5, (random.random(), random.random()))
+    paper = RPSCircle(RPSType.Paper, (101, 699), 5, (random.random(), random.random()))
 
-    all_groups.add(stone, scissor, paper)
+    paper2 = RPSCircle(RPSType.Paper, (201, 699), 5, (random.random(), random.random()))
+    paper3 = RPSCircle(RPSType.Paper, (301, 699), 5, (random.random(), random.random()))
+    paper4 = RPSCircle(RPSType.Paper, (401, 699), 5, (random.random(), random.random()))
+
+    all_groups.add(stone, stone2, scissor, scissor2, paper, paper2)
 
     run = True
     while run:
@@ -36,22 +39,17 @@ def go():
         window.fill((144, 144, 144))
         all_groups.draw(window)
 
-        for circle in all_groups:
+        window_collisions(all_groups, ws)
 
-            circle.reflect_if_collided(ws)
-            kill_dead_sprites(all_groups)
-
-            if not circle.alive:
-                circle.kill()
-                if len(all_groups.sprites()) == 1:
-                    if ctypes.windll.user32.MessageBoxW(0, all_groups.sprites().pop().get_name()+ " won!!! Again?", "Rock Paper Scissors", 4) == 6:
-                        pygame.display.quit()
-                        pygame.quit()
-                        run = True
-                        go()
-                    else:
-                        quit()
-
+        for a, b in itertools.permutations(all_groups, 2):
+            reflectBalls(a, b)
+        
+        if all(sprite.type.name == all_groups.sprites()[0].type.name for sprite in all_groups):
+            winner = all_groups.sprites()[0].type.name
+            ctypes.windll.user32.MessageBoxW(0, winner + " won!", "Winner: " + winner, 0)
+            pygame.display.quit()
+            pygame.quit()
+            quit()
         pygame.display.flip()
     
 
